@@ -21,6 +21,59 @@ public class MiniMiniMusicApp {
 		new MiniMiniMusicApp().buildGui();
 	}
 
+	public void buildGui() {
+		JFrame frame = new JFrame("A very little music app");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		BorderLayout layout = new BorderLayout();
+		JPanel background = new JPanel(layout);
+		background.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+		Box buttonBox = new Box(BoxLayout.Y_AXIS);
+
+		JButton start = new JButton("Start");
+		buttonBox.add(start);
+
+		JButton stop = new JButton("Stop");
+		buttonBox.add(stop);
+
+		JButton upTempo = new JButton("Tempo Up");
+		buttonBox.add(upTempo);
+
+		JButton downTempo = new JButton("Tempo Down");
+		buttonBox.add(downTempo);
+
+		Box nameBox = new Box(BoxLayout.Y_AXIS);
+		for (String instrumentName : instrumentNames) {
+			JLabel instrumentLabel = new JLabel(instrumentName);
+			instrumentLabel.setBorder(BorderFactory.createEmptyBorder(4, 1, 4, 1));
+			nameBox.add(instrumentLabel);
+		}
+
+		background.add(BorderLayout.EAST, buttonBox);
+		background.add(BorderLayout.WEST, nameBox);
+
+		frame.getContentPane().add(background);
+
+		GridLayout grid = new GridLayout(16, 16);
+		grid.setVgap(1);
+		grid.setHgap(2);
+
+		JPanel mainPanel = new JPanel(grid);
+		background.add(BorderLayout.CENTER, mainPanel);
+
+		checkboxList = new ArrayList<>();
+		for (int i = 0; i < 256; i++) {
+			JCheckBox c = new JCheckBox();
+			c.setSelected(false);
+			checkboxList.add(c);
+			mainPanel.add(c);
+		}
+
+		frame.setBounds(50, 50, 300, 300);
+		frame.pack();
+		frame.setVisible(true);
+	}
+
 	private void makeTracks(int[] list) {
 		for (int i = 0; i < 16; i++) {
 			int key = list[i];
