@@ -20,4 +20,16 @@ public class MiniMiniMusicApp {
 	public static void main(String[] args) {
 		new MiniMiniMusicApp().buildGui();
 	}
+
+	public static MidiEvent makeEvent(int command, int channel, int data1, int data2, int tick) {
+		MidiEvent event = null;
+		try {
+			ShortMessage message = new ShortMessage();
+			message.setMessage(command, channel, data1, data2);
+			event = new MidiEvent(message, tick);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return event;
+	}
 }
