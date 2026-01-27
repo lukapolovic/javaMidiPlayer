@@ -21,6 +21,17 @@ public class MiniMiniMusicApp {
 		new MiniMiniMusicApp().buildGui();
 	}
 
+	private void makeTracks(int[] list) {
+		for (int i = 0; i < 16; i++) {
+			int key = list[i];
+
+			if (key != 0) {
+				track.add(makeEvent(NOTE_ON, 9, key, 100, i));
+				track.add(makeEvent(NOTE_OFF, 9, key, 100, i + 1));
+			}
+		}
+	}
+
 	public static MidiEvent makeEvent(int command, int channel, int data1, int data2, int tick) {
 		MidiEvent event = null;
 		try {
