@@ -74,6 +74,23 @@ public class MiniMiniMusicApp {
 		frame.setVisible(true);
 	}
 
+	private void setUpMidi() {
+		try {
+			sequencer = MidiSystem.getSequencer();
+			sequencer.open();
+			sequence = new Sequence(Sequence.PPQ, 4);
+			track = sequence.createTrack();
+			sequencer.setTempoInBPM(120);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void changeTempo(float tempoMultiplier) {
+		float tempoFactor = sequencer.getTempoFactor();
+		sequencer.setTempoFactor(tempoFactor * tempoMultiplier);
+	}
+
 	private void makeTracks(int[] list) {
 		for (int i = 0; i < 16; i++) {
 			int key = list[i];
