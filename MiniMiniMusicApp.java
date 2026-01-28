@@ -31,15 +31,19 @@ public class MiniMiniMusicApp {
 		Box buttonBox = new Box(BoxLayout.Y_AXIS);
 
 		JButton start = new JButton("Start");
+		start.addActionListener(e -> buildTrackAndStart());
 		buttonBox.add(start);
 
 		JButton stop = new JButton("Stop");
+		stop.addActionListener(e -> sequencer.stop());
 		buttonBox.add(stop);
 
 		JButton upTempo = new JButton("Tempo Up");
+		upTempo.addActionListener(e -> changeTempo(1.03f));
 		buttonBox.add(upTempo);
 
 		JButton downTempo = new JButton("Tempo Down");
+		downTempo.addActionListener(e -> changeTempo(0.97f));
 		buttonBox.add(downTempo);
 
 		Box nameBox = new Box(BoxLayout.Y_AXIS);
@@ -69,9 +73,47 @@ public class MiniMiniMusicApp {
 			mainPanel.add(c);
 		}
 
+		setUpMidi();
+
 		frame.setBounds(50, 50, 300, 300);
 		frame.pack();
 		frame.setVisible(true);
+	}
+
+	private void buildTrackAndStart() {
+		int[] trackList;
+
+		sequence.deleteTrack(track);
+		track = sequence.createTrack();
+
+		for (int i = 0; i < 16; i++) {
+			trackList = new int[16];
+
+			int key = instruments[i];
+
+			for (int j = 0; j < 16; j++) {
+				JCheckBox jc = checkboxList.get(j + 16 * i);
+				if (jc.isSelected()) {
+					trackList[j] = key;
+				} else {
+					trackList[j] = 0;
+				}
+			}
+
+			makeTracks(trackList);
+			track.add(makeEvent(CONTROL_CHANGE, 1, 127, 0, 16));
+		}
+
+		track.add(makeEvent(PROGRAM_CHANGE, 9, 1, 0, 15));
+
+		try {
+			sequencer.setSequence(sequence);
+			sequencer.setLoopCount(sequencer.LOOP_CONTINUOUSLY);
+			sequencer.setTempoInBPM(120);
+			sequencer.start();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void setUpMidi() {
