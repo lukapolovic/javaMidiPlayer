@@ -1,6 +1,11 @@
 import javax.sound.midi.*;
 import javax.swing.*;
 import java.awt.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 import static javax.sound.midi.ShortMessage.*;
@@ -154,5 +159,39 @@ public class MiniMiniMusicApp {
 			e.printStackTrace();
 		}
 		return event;
+	}
+
+	private void writeFile() {
+		boolean[] checkboxState = new boolean[256];
+
+		for (int i = 0; i < 256; i++) {
+			JCheckBox check = checkboxList.get(i);
+			if (check.isSelected()) {
+				checkboxState[i] = true;
+			}
+		}
+
+		try (ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream("Checkbox.ser"))) {
+			os.writeObject(checkboxState);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void readFile() {
+		boolean[] checkboxState = null;
+		try (ObjectInputStream is = new ObjectInputStream(new FileInputStream("Checkbox.ser"))) {
+			checkboxState = (boolean[]) is.readObject();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		for (int i = 0; i < 256; i++) {
+			JCheckBox check = checkboxList.get(i);
+			check.setSelected(checkboxState[i]);
+		}
+
+		sequencer.stop();
+		buildTrackAndStart();
 	}
 }
