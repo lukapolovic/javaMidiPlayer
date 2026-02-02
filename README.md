@@ -80,12 +80,10 @@ Multiple clients can connect simultaneously, exchange beat patterns, and instant
 
 ## ▶️ How to Run
 
-### Start the Server
+### Start the Server and one or more Clients
 ```bash
 javac MusicServer.java
 java MusicServer
 
-### Start One or More Clients
-```bash
 javac MiniMiniMusicApp.java
 java MiniMiniMusicApp <username>
