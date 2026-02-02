@@ -1,17 +1,28 @@
 import javax.sound.midi.*;
 import javax.swing.*;
+import javax.swing.event.*;
 import java.awt.*;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.ArrayList;
+import java.io.*;
+import java.net.Socket;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static javax.sound.midi.ShortMessage.*;
 
 public class MiniMiniMusicApp {
+	private JList<String> incomingList;
+	private JTextArea userMessage;
 	private ArrayList<JCheckBox> checkboxList;
+
+	private Vector<String> listVector = new Vector<>();
+	private HashMap<String, boolean[]> otherSeqsMap = new HashMap<>();
+
+	private String userName;
+	private int nextNum;
+
+	private ObjectOutputStream out;
+	private ObjectInputStream in;
+
 	private Sequencer sequencer;
 	private Sequence sequence;
 	private Track track;
@@ -23,7 +34,22 @@ public class MiniMiniMusicApp {
 	int[] instruments = { 35, 42, 46, 38, 49, 39, 50, 60, 70, 72, 64, 56, 58, 47, 67, 63 };
 
 	public static void main(String[] args) {
-		new MiniMiniMusicApp().buildGui();
+		new MiniMiniMusicApp().startUp(args[0]);
+	}
+
+	public void startUp(String name) {
+		userName = name;
+		try {
+			Socket socket = new Socket("localhost", 8000);
+			out = new ObjectOutputStream(socket.getOutputStream());
+			in = new ObjectInputStream(socket.getInputStream());
+			ExecutorService executor = Executors.newSingleThreadExecutor();
+			executor.submit(new RemoteReader());
+		} catch (Exception ex) {
+			System.out.println("Couldnt connect to server");
+		}
+		setUpMidi();
+		buildGui();
 	}
 
 	public void buildGui() {
@@ -50,6 +76,23 @@ public class MiniMiniMusicApp {
 		JButton downTempo = new JButton("Tempo Down");
 		downTempo.addActionListener(e -> changeTempo(0.97f));
 		buttonBox.add(downTempo);
+
+		JButton sendIt = new JButton("send it");
+		sendIt.addActionListener(e -> sendMessageAndTracks());
+		buttonBox.add(sendIt);
+
+		userMessage = new JTextArea();
+		userMessage.setLineWrap(true);
+		userMessage.setWrapStyleWord(true);
+		JScrollPane messageScroller = new JScrollPane(userMessage);
+		buttonBox.add(messageScroller);
+
+		incomingList = new JList<>();
+		incomingList.addListSelectionListener(new MyListSelectionListener());
+		incomingList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		JScrollPane theList = new JScrollPane(incomingList);
+		buttonBox.add(theList);
+		incomingList.setListData(listVector);
 
 		Box nameBox = new Box(BoxLayout.Y_AXIS);
 		for (String instrumentName : instrumentNames) {
@@ -193,5 +236,65 @@ public class MiniMiniMusicApp {
 
 		sequencer.stop();
 		buildTrackAndStart();
+	}
+
+	private void sendMessageAndTracks() {
+		boolean[] checkboxState = new boolean[256];
+		for (int i = 0; i < 256; i++) {
+			JCheckBox check = checkboxList.get(i);
+			if (check.isSelected()) {
+				checkboxState[i] = true;
+			}
+		}
+		try {
+			out.writeObject(userName + nextNum++ + ": " + userMessage.getText());
+			out.writeObject(checkboxState);
+		} catch (IOException e) {
+			System.out.println("Could not send to the server");
+			e.printStackTrace();
+		}
+		userMessage.setText("");
+	}
+
+	public class MyListSelectionListener implements ListSelectionListener {
+		public void valueChanged(ListSelectionEvent lse) {
+			if (!lse.getValueIsAdjusting()) {
+				String selected = incomingList.getSelectedValue();
+				if (selected != null) {
+					boolean[] selectedState = otherSeqsMap.get(selected);
+					changeSequence(selectedState);
+					sequencer.stop();
+					buildTrackAndStart();
+				}
+			}
+		}
+	}
+
+	private void changeSequence(boolean[] checkboxState) {
+		for (int i = 0; i < 256; i++) {
+			JCheckBox check = checkboxList.get(i);
+			check.setSelected(checkboxState[i]);
+		}
+	}
+
+	public class RemoteReader implements Runnable {
+		public void run() {
+			try {
+				Object obj;
+				while ((obj = in.readObject()) != null) {
+					System.out.println("got an object from the server");
+					System.out.println(obj.getClass());
+
+					String nameToShow = (String) obj;
+					boolean[] checkboxState = (boolean[]) in.readObject();
+					otherSeqsMap.put(nameToShow, checkboxState);
+
+					listVector.add(nameToShow);
+					incomingList.setListData(listVector);
+				}
+			} catch (IOException | ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }
